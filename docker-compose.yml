@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   workflows-service:
@@ -14,7 +14,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=workflows
-    volumes:
+      - NATS_URL=nats://nats:4222
+    volumes:        
       - ./libs:/usr/src/app/libs
       - ./package.json:/usr/src/app/package.json
       - ./tsconfig.json:/usr/src/app/tsconfig.json
@@ -26,6 +27,7 @@ services:
       - ./apps/workflows-service:/usr/src/app/apps/workflows-service
     depends_on: # This instructs Docker Compose to start the "workflows-db" container before starting the "workflows-service" container
       - workflows-db
+      - nats
   workflows-db:
     image: postgres:13.2-alpine
     environment: # We need to make sure these environment variables match the ones we specified in the "workflows-service" service
@@ -47,10 +49,11 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=virtual-facility
-    volumes:
+      - NATS_URL=nats://nats:4222
+    volumes:        
       - ./libs:/usr/src/app/libs
-      - ./package.json:/usr/src/app/package.json
-      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - ./package.json:/usr/src/app/package.json    
+      - ./tsconfig.json:/usr/src/app/tsconfig.json   
       # Note: This is usually not a good practice to mount the "node_modules" directory on the host to the container       
       # We are doing this for the sake of simplicity in this example       
       - ./node_modules:/usr/src/app/node_modules
@@ -58,9 +61,12 @@ services:
     depends_on:
       - virtual-facility-db
       - workflows-service
+      - nats
   virtual-facility-db:
     image: postgres:13.2-alpine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=virtual-facility
+  nats:
+    image: nats:2.2.2-alpine
