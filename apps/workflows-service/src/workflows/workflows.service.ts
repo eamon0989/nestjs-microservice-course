@@ -26,6 +26,7 @@ export class WorkflowsService {
   }
 
   async create(createWorkflowDto: CreateWorkflowDto): Promise<Workflow> {
+    this.logger.log(`Creating workflow: ${JSON.stringify(createWorkflowDto)}`);
     const workflow = this.workflowsRepository.create({
       ...createWorkflowDto,
     });
