@@ -1,6 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, NatsRecordBuilder } from '@nestjs/microservices';
 import { ALARMS_SERVICE } from './constants';
+import { TracingService } from '@app/tracing';
+import * as nats from 'nats';
+import { Interval } from '@nestjs/schedule';
 
 @Injectable()
 export class AlarmsGeneratorService {
@@ -9,16 +12,22 @@ export class AlarmsGeneratorService {
   constructor(
     @Inject(ALARMS_SERVICE)
     private readonly alarmsService: ClientProxy,
+    private readonly tracingService: TracingService,
   ) {}
 
-  // @Interval(10000)
+  @Interval(10000)
   generateAlarm() {
+    const headers = nats.headers();
+    headers.set('traceId', this.tracingService.generateTraceId());
     const alarmCreatedEvent = {
       name: 'Alarm #' + Math.floor(Math.random() * 1000) + 1,
       // random number from 1-100,
       buildingId: Math.floor(Math.random() * 100) + 1,
     };
     this.logger.log(`Emitting alarm: ${JSON.stringify(alarmCreatedEvent)}`);
-    this.alarmsService.emit('alarm.created', alarmCreatedEvent); // 👈 (emit not send for Events)
+    const natsRecord = new NatsRecordBuilder(alarmCreatedEvent)
+      .setHeaders(headers)
+      .build();
+    this.alarmsService.emit('alarm.created', natsRecord); // 👈 (emit not send for Events)
   }
 }
