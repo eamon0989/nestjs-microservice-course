@@ -15,6 +15,7 @@ import { WORKFLOWS_SERVICE } from '../constants';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URL],
+          queue: 'workflows-service',
         },
       },
     ]),
